@@ -27,6 +27,13 @@ pub fn build(b: *std.Build) void {
 
     const optimize = b.standardOptimizeOption(.{});
 
+    const limine = b.dependency("limine_zig", .{
+        .api_revision = 3,
+        .allow_deprecated = false,
+        .no_pointers = false,
+    });
+    const limine_mod = limine.module("limine");
+
     const kernel = b.addExecutable(.{
         .name = "BlinkOS.elf",
         .root_module = b.createModule(.{
@@ -38,6 +45,7 @@ pub fn build(b: *std.Build) void {
         .use_llvm = true,
     });
 
+    kernel.root_module.addImport("limine", limine_mod);
     kernel.setLinkerScript(b.path("linker-x86_64.ld"));
     kernel.root_module.addAssemblyFile(b.path("src/asm/entry.s"));
 
@@ -76,4 +84,6 @@ pub fn build(b: *std.Build) void {
 
     const run_step = b.step("run", "run");
     run_step.dependOn(&run_cmd.step);
+
+    // TODO : test step
 }
