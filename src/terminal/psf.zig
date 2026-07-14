@@ -1,3 +1,6 @@
+
+const std = @import("std");
+
 /// a psf2 font header
 const Header = extern struct {
     magic: u32,
@@ -11,10 +14,11 @@ const Header = extern struct {
 };
 
 /// the raw bytes of the font file
-pub const bytes = @embedFile("../assets/zap-ext-light32.psftx");
+pub const bytes = @embedFile("../assets/zap-ext-light32.psf");
+
 /// a "parsed" font header
 pub const header: *const Header = @alignCast(@ptrCast(bytes));
 
 test "validate font" {
-    @import("std").testing.expect(header.magic == 0x0);
+    std.testing.expect(header.magic == 0x864ab572);
 }

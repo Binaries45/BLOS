@@ -8,12 +8,20 @@ pub export var framebuffer_request: limine.FramebufferRequest = .{};
 //   full support for the zig standard library
 
 const std = @import("std");
-const Terminal = @import("Terminal.zig");
+const terminal = @import("Terminal.zig");
+const art = @import("art.zig");
 
-// TODO : this shit keeps crashing on boot, there has to be an easier way,
-// maybe go back to the old manual way just with a few new things
-// from what we know in limine.zig
+pub fn panic(msg: []const u8, trace: ?*std.builtin.StackTrace, sz: ?usize) noreturn {
+    _ = msg;
+    _ = trace;
+    _ = sz;
+
+    terminal.clear(terminal.color(255, 0, 0, 255));
+    while (true) {}
+}
+
 export fn main() noreturn {
+    asm volatile ("cli");
     if (framebuffer_request.response == null) {
         while(true){}
     }
@@ -25,22 +33,23 @@ export fn main() noreturn {
     const height = @as(usize, fb.height);
     const pitch = @as(usize, fb.pitch);
 
-    var term = Terminal.init(.{
+    terminal.init(.{
         .ptr = @alignCast(@ptrCast(raw_addr)),
         .width = width,
         .height = height,
         .pitch = pitch,
     });
 
-    term.clear(Terminal.color(20, 30, 40, 255));
-    term.fg = Terminal.color(255, 255, 255, 255);
+    terminal.clear(terminal.color(0, 0, 0, 255));
+    terminal.fg(terminal.color(255, 255, 255, 255));
 
-    term.print("BlinkOS 64-bit Core Online.\n");
-    term.print("PSF2 Font Engine Rendered Successfully via Graphics Framebuffer!\n");
+    terminal.print("boot successful\n");
+    terminal.print(art.LOGO);
+    asm volatile ("sti");
 
     while (true) {}
 }
 
 test "blos" {
-    _ = Terminal;
+    _ = terminal;
 }

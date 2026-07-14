@@ -45,6 +45,7 @@ pub fn build(b: *std.Build) void {
         .use_llvm = true,
     });
 
+    kernel.pie = false;
     kernel.root_module.addImport("limine", limine_mod);
     kernel.setLinkerScript(b.path("linker-x86_64.ld"));
     kernel.root_module.addAssemblyFile(b.path("src/asm/entry.s"));
