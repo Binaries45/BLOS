@@ -1,7 +1,2 @@
 
-pub const LOGO =
-    \\todo
-    \\todo
-    \\todo
-    \\todo
-;
+pub const LOGO = "LOGO";

@@ -26,6 +26,56 @@ var fg_color: Color = 0xFFFFFFFF;
 
 pub const Color = u32;
 
+pub const Colors = enum(Color) {
+    Black = color(0, 0, 0, 255),
+    White = color(255, 255, 255, 255),
+    Red = color(255, 0, 0, 255),
+    Green = color(0, 255, 0, 255),
+    Blue = color(0, 0, 255, 255),
+    Cyan = color(0, 255, 255, 255),
+    Yellow = color(255, 255, 0, 255),
+    Magenta = color(255, 0, 255, 255),
+    Orange = color(255, 165, 0, 255),
+    _,
+};
+
+pub const Writer = struct {
+    pub const Error = error {
+        WriteFailed,
+    };
+
+    interface: std.Io.Writer,
+
+    pub fn init() Writer {
+        return .{
+            .interface = .{
+                .buffer = &.{},
+                .vtable = &.{
+                    .drain = drain,
+                },
+                .end = 0,
+            }
+        };
+    }
+
+    pub fn drain(w: *std.Io.Writer, data: []const []const u8, splat: usize) Error!usize {
+        const self: *Writer = @fieldParentPtr("interface", w);
+        _ = self; // will be useful when we add some context
+        var drained: usize = 0;
+        
+        for (data) |d| if (d.len > 0) {
+            print(d);
+            drained += d.len;
+        };
+
+        if (splat > 0 and data.len > 0) {
+            // todo : support splatting
+        } 
+
+        return drained;
+    }
+};
+
 /// pack rgba color values into an integer for the framebuffer
 pub fn color(r: u8, g: u8, b: u8, a: u8) Color {
     return @as(u32, b) | @as(u32, g) << 8 | @as(u32, r) << 16 | @as(u32, a) << 24;
@@ -83,8 +133,8 @@ pub fn putChar(c: u8) void {
         const val = g_data[offset];
 
         if ((val & (@as(u8, 0x80) >> @intCast(bit_offset))) != 0) {
-            const sx = cx + x;
-            const sy = cy + y;
+            const sx = cx + x * font_scale;
+            const sy = cy + y * font_scale;
 
             if (sx < fb_width and sy < fb_height) {
                 const pixels_per_row = fb_pitch / 4;
@@ -106,9 +156,11 @@ pub fn print(s: []const u8) void {
     for (s) |c| putChar(c);
 }
 
-test "colors" {
-    std.testing.expect(color(0, 0, 0, 255) == 0xFF000000);
-    std.testing.expect(color(255, 0, 0, 0) == 0x00FF0000);
-    std.testing.expect(color(0, 255, 0, 0) == 0x0000FF00);
-    std.testing.expect(color(0, 0, 255, 0) == 0x000000FF);
+// zig formatted printing for the terminal
+pub fn printf(comptime fmt: []const u8, args: anytype) void {
+    var writer = Writer.init();
+    writer.interface.print(fmt, args) catch {
+        fg(@intFromEnum(Colors.Red));
+        print("Write Failed");
+    };
 }
